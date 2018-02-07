@@ -70,7 +70,7 @@ int main (int argc, char **argv) {
 
    if (Initialization(argc,argv)){
      Control();
-   } 
+   }
 } /* end of main function */
 
 /***********************************************************************\
@@ -78,26 +78,30 @@ int main (int argc, char **argv) {
  * Output: None                                                          *
  * Function: Monitor Devices and process events                          *
  \***********************************************************************/
+int lastEID[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
+
 void Control(void){
-  uint8_t i;
+  int i;
   Status LastStatus=0;
   while (1) {
     //printf("%10.3f   Flags = %d - \n ", Now(), Flags);
     //sleep(0); // Just to slow down to have time to see Flags
-	if (CHECK_BIT(Flags, i)){ //event at device i
-		DisplayEvent('d', &BufferLastEvent[i]);
-		Server(&BufferLastEvent[i]);
-		Flags &= ~(1<<i); // clear the ith bit
-	}
-	LastStatus = Flags;
-  	//printf("\n >>>>>>>>>  >>> When: %10.3f  Flags = %d\n", Now(),
-     //Flags); 
-	if (i < 32){
-		i++;
-	}
-	else
-		i = 0;
-	//printf("i = %d\n", i);
+
+  	if (CHECK_BIT(Flags, i)){ //event at device i
+      struct EventTag e = BufferLastEvent[i];
+      lastEID[i] = BufferLastEvent[i].EventID;
+  		DisplayEvent('d', &BufferLastEvent[i]);
+      printf("device: %d --- lastEID: %d\n",i, lastEID[i] );
+  		Server(&BufferLastEvent[i]);
+  		Flags &= ~(1<<i); // clear the ith bit
+  	}
+    	//printf("\n >>>>>>>>>  >>> When: %10.3f  Flags = %d\n", Now(),
+       //Flags);
+  	if (i < MAX_NUMBER_DEVICES){
+  		i++;
+  	}
+  	else
+  		i = 0;
 	}
 }
 
@@ -110,46 +114,16 @@ void Control(void){
 \***********************************************************************/
 void BookKeeping(void){
   int bufEvents = 0;
-  /*for (int i = 0; i < MAX_NUMBER_DEVICES; i++){
-	DisplayEvent('0', &BufferLastEvent[i]);
-	if (BufferedLastEvent[i] != null){
-	bufEvents++;
-	}
+   for (int i = 0; i < 2; i++){
+	    DisplayEvent('b', &BufferLastEvent[i]);
+      printf("device: [%d] --- lastEID: %d\n",i, lastEID[i] );
+      bufEvents += 99 - lastEID[i] ;
+	     // if (BufferLastEvent[i] != NULL){
+	     //    bufEvents++;
+	     //  }
   }
-  printf("Buffered Events: %d\n", bufEvents);*/
+  printf("Buffered Events: %d\n", bufEvents);
   printf("\n >>>>>> Done\n");
 }
-
-
-
-
-
-
-
-/*
-void Control(void){
-  int i;
-  Status LastStatus=0;
-  i = 1;
-  while (1) {
-    //printf("%10.3f   Flags = %d - \n ", Now(), Flags);
-    sleep(1); // Just to slow down to have time to see Flags
-	if (CHECK_BIT(Flags, i)){ //event at device i
-		DisplayEvent('d', &BufferLastEvent[j]);
-		Server(&BufferLastEvent[i]);
-		Flags &= ~i; // clear the ith bit
-	}
-	LastStatus = Flags;
-  	printf("\n >>>>>>>>>  >>> When: %10.3f  Flags = %d\n", Now(),
-     Flags); 
-	if (i < 32){
-		i++;
-	}
-	else
-		i = 1;
-	printf("i = %d\n", i);
-}
-
-*/
 
 
