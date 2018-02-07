@@ -1,8 +1,8 @@
 
 /*****************************************************************************\
 * Laboratory Exercises COMP 3510                                              *
-* Author: Saad Biaz                                                           *
-* Date  : January 18, 2014                                                    *
+* Author: Rain Li, David Harris                                               *
+* Date  : February 7, 2018                                                    *
 \*****************************************************************************/
 
 /*****************************************************************************\
@@ -16,13 +16,14 @@
 *                             Global data types                               *
 \*****************************************************************************/
 
+#include <stdint.h>
 
 
 /*****************************************************************************\
 *                             Global definitions                              *
 \*****************************************************************************/
 
-
+#define CHECK_BIT(var, pos) ((var) & (1 << (pos)))
 
 
 
@@ -80,15 +81,25 @@ int main (int argc, char **argv) {
 void Control(void){
   int i;
   Status LastStatus=0;
+  i = 0;
   while (1) {
-    printf("%10.3f   Flags = %d - \n ", Now(), Flags);
-    sleep(1); // Just to slow down to have time to see Flags
-    if (Flags != LastStatus){
-      LastStatus = Flags;
-      printf("\n >>>>>>>>>  >>> When: %10.3f  Flags = %d\n", Now(),
-	     Flags);
-    }
-  }
+    //printf("%10.3f   Flags = %d - \n ", Now(), Flags);
+    //sleep(0); // Just to slow down to have time to see Flags
+	if (CHECK_BIT(Flags, i)){ //event at device i
+		DisplayEvent('d', &BufferLastEvent[i]);
+		Server(&BufferLastEvent[i]);
+		Flags &= ~(1<<i); // clear the ith bit
+	}
+	LastStatus = Flags;
+  	//printf("\n >>>>>>>>>  >>> When: %10.3f  Flags = %d\n", Now(),
+     //Flags); 
+	if (i < 32){
+		i++;
+	}
+	else
+		i = 0;
+	//printf("i = %d\n", i);
+	}
 }
 
 
@@ -99,6 +110,14 @@ void Control(void){
 *           not yet processed (Server() function not yet called)        *
 \***********************************************************************/
 void BookKeeping(void){
+  int bufEvents = 0;
+  /*for (int i = 0; i < MAX_NUMBER_DEVICES; i++){
+	DisplayEvent('0', &BufferLastEvent[i]);
+	if (BufferedLastEvent[i] != null){
+	bufEvents++;
+	}
+  }
+  printf("Buffered Events: %d\n", bufEvents);*/
   printf("\n >>>>>> Done\n");
 }
 
@@ -108,6 +127,30 @@ void BookKeeping(void){
 
 
 
+/*
+void Control(void){
+  int i;
+  Status LastStatus=0;
+  i = 1;
+  while (1) {
+    //printf("%10.3f   Flags = %d - \n ", Now(), Flags);
+    sleep(1); // Just to slow down to have time to see Flags
+	if (CHECK_BIT(Flags, i)){ //event at device i
+		DisplayEvent('d', &BufferLastEvent[j]);
+		Server(&BufferLastEvent[i]);
+		Flags &= ~i; // clear the ith bit
+	}
+	LastStatus = Flags;
+  	printf("\n >>>>>>>>>  >>> When: %10.3f  Flags = %d\n", Now(),
+     Flags); 
+	if (i < 32){
+		i++;
+	}
+	else
+		i = 1;
+	printf("i = %d\n", i);
+}
 
+*/
 
 
