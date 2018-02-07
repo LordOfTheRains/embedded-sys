@@ -79,9 +79,8 @@ int main (int argc, char **argv) {
  * Function: Monitor Devices and process events                          *
  \***********************************************************************/
 void Control(void){
-  int i;
+  uint8_t i;
   Status LastStatus=0;
-  i = 0;
   while (1) {
     //printf("%10.3f   Flags = %d - \n ", Now(), Flags);
     //sleep(0); // Just to slow down to have time to see Flags

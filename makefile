@@ -12,4 +12,4 @@ run:
 	./lab1 2 1 10 0
 
 clean:
-	rm -rf lab1
+	rm -rf lab1 *.proc *.gen
