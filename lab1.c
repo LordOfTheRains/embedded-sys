@@ -86,18 +86,16 @@ void Control(void){
   Status LastStatus=0;
   while (1) {
     if (Flags){
-      start = Now();
+      start = Now(); //mark the start time for turnaround time  calc
       Flag temp = Flags;
       Flags = 0;
       int device = 0;
       while (temp){
         if (temp & 1){
           responseTime[device] += Now() - BufferLastEvent[device].When;
-          processed[device]++;
-          DisplayEvent('d', &BufferLastEvent[device]);
       		Server(&BufferLastEvent[device]);
-          //printf("device: %d --- lastEID: %d\n",i, lastEID[i] );
-
+          DisplayEvent('d', &BufferLastEvent[device]);
+          processed[device]++;
         }
         temp = temp >> 1;
         device++;
@@ -119,16 +117,17 @@ void Control(void){
 void BookKeeping(void){
   Timestamp done = Now();
   int missed = 0;
-  int total = 0;
-   for (int i = 0; i < MAX_NUMBER_DEVICES ; i++){
-      int numEvent = BufferLastEvent[i].EventID;
-      if (numEvent > 0){
-  	    DisplayEvent('b', &BufferLastEvent[i]);
-        missed += numEvent - processed[i] + 1 ;
-        printf("device: [%d] --- avg response time: %lf\n",i,  responseTime[i]/numEvent );
-        printf("device: [%d] --- processed: %d\n",i, processed[i] );
-      }
+  int totalEvents = 0;
+  printf("\nStart BookKeeping ...\n");
+  printf("\nDevice\tmissed\tavg response time\tlast event\n");
+  for (int i = 0; i < MAX_NUMBER_DEVICES ; i++){
+    int numEvent = BufferLastEvent[i].EventID;
+    if (numEvent > 0){
+      totalEvents += numEvent;
+      missed += numEvent - processed[i] + 1 ;
+      printf("%d\t%10.2f\t%lf\t%d\n",i, missed/numEvent*100.0 ,responseTime[i]/numEvent,numEvent );
+      //printf("device [%d]:missed %d percent events with avg response time: %lf\n",i, missed/numEvent*100 ,responseTime[i]/numEvent );
+    }
   }
-  printf("total turn around time %10.3f\n", done);
-  printf("\n >>>>>> Done\n");
+  printf("Avg turnaround time %10.3f\n", done/totalEvents);
 }
