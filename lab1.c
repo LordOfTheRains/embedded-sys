@@ -80,7 +80,7 @@ int main (int argc, char **argv) {
  \***********************************************************************/
 int processed[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
 Timestamp start;
-float responseTime[MAX_NUMBER_DEVICES] = {0};
+double responseTime[MAX_NUMBER_DEVICES] = {0};
 void Control(void){
   int i;
   Status LastStatus=0;
@@ -125,7 +125,7 @@ void BookKeeping(void){
       if (numEvent > 0){
   	    DisplayEvent('b', &BufferLastEvent[i]);
         missed += numEvent - processed[i] + 1 ;
-        printf("device: [%d] --- avg response time: %d\n",i,  responseTime[i]/numEvent );
+        printf("device: [%d] --- avg response time: %lf\n",i,  responseTime[i]/numEvent );
         printf("device: [%d] --- processed: %d\n",i, processed[i] );
       }
   }
