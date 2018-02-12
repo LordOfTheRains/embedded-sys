@@ -79,26 +79,30 @@ int main (int argc, char **argv) {
  * Function: Monitor Devices and process events                          *
  \***********************************************************************/
 int processed[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
-Timestamp start;
+
+double turnaround[MAX_NUMBER_DEVICES] = {0};
 double responseTime[MAX_NUMBER_DEVICES] = {0};
 void Control(void){
   int i;
-  Status LastStatus=0;
+
   while (1) {
     if (Flags){
-      start = Now(); //mark the start time for turnaround time  calc
-      Flag temp = Flags;
+      unsigned temp = Flags; //temp is negative sometimes even if flag is not
+      //printf("Flags = %d - \n ",Flags);
+      //printf("temp = %d...... \n ",temp);
       Flags = 0;
       int device = 0;
       while (temp){
         if (temp & 1){
           responseTime[device] += Now() - BufferLastEvent[device].When;
       		Server(&BufferLastEvent[device]);
+          turnaround[device] += Now() - BufferLastEvent[device].When;
           DisplayEvent('d', &BufferLastEvent[device]);
           processed[device]++;
         }
         temp = temp >> 1;
         device++;
+        //printf("temp = %d - \n ",temp);
       }
     }
   }
@@ -115,19 +119,17 @@ void Control(void){
 *           not yet processed (Server() function not yet called)        *
 \***********************************************************************/
 void BookKeeping(void){
-  Timestamp done = Now();
-  int missed = 0;
+
   int totalEvents = 0;
   printf("\nStart BookKeeping ...\n");
-  printf("\nDevice\tmissed\tavg response time\tlast event\n");
+  printf("\nDevice\tmissed\tavg response time\tavg turnaround time\tlast event\n");
   for (int i = 0; i < MAX_NUMBER_DEVICES ; i++){
-    int numEvent = BufferLastEvent[i].EventID;
+    int numEvent = BufferLastEvent[i].EventID + 1;
     if (numEvent > 0){
-      totalEvents += numEvent;
-      missed += numEvent - processed[i] + 1 ;
-      printf("%d\t%10.2f\t%lf\t%d\n",i, missed/numEvent*100.0 ,responseTime[i]/numEvent,numEvent );
+      float missed = numEvent - processed[i];
+      printf("%d\t%5.2f",i,missed/numEvent*100.0);
+      printf("\t\t%lf\t\t%lf\t%d\n",responseTime[i]/numEvent,turnaround[i]/numEvent,numEvent );
       //printf("device [%d]:missed %d percent events with avg response time: %lf\n",i, missed/numEvent*100 ,responseTime[i]/numEvent );
     }
   }
-  printf("Avg turnaround time %10.3f\n", done/totalEvents);
 }
