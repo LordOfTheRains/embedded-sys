@@ -94,10 +94,10 @@ void Control(void){
       int device = 0;
       while (temp){
         if (temp & 1){
+           DisplayEvent('d', &BufferLastEvent[device]);
           responseTime[device] += Now() - BufferLastEvent[device].When;
       		Server(&BufferLastEvent[device]);
           turnaround[device] += Now() - BufferLastEvent[device].When;
-          DisplayEvent('d', &BufferLastEvent[device]);
           processed[device]++;
         }
         temp = temp >> 1;
