@@ -121,9 +121,10 @@ void Control(void){
 void BookKeeping(void){
 
   int totalEvents = 0;
+  int i;
   printf("\nStart BookKeeping ...\n");
   printf("\nDevice\tmissed\tavg response time\tavg turnaround time\tlast event\n");
-  for (int i = 0; i < MAX_NUMBER_DEVICES ; i++){
+  for (i = 0; i < MAX_NUMBER_DEVICES ; i++){
     int numEvent = BufferLastEvent[i].EventID + 1;
     if (numEvent > 0){
       float missed = numEvent - processed[i];
