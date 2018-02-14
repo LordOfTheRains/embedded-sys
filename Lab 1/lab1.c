@@ -79,28 +79,30 @@ int main (int argc, char **argv) {
  * Function: Monitor Devices and process events                          *
  \***********************************************************************/
 int processed[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
-Timestamp start;
-float responseTime[MAX_NUMBER_DEVICES] = {0};
+
+double turnaround[MAX_NUMBER_DEVICES] = {0};
+double responseTime[MAX_NUMBER_DEVICES] = {0};
 void Control(void){
   int i;
-  Status LastStatus=0;
+
   while (1) {
     if (Flags){
-      start = Now();
-      Flag temp = Flags;
+      unsigned temp = Flags; //temp is negative sometimes even if flag is not
+      //printf("Flags = %d - \n ",Flags);
+      //printf("temp = %d...... \n ",temp);
       Flags = 0;
       int device = 0;
       while (temp){
         if (temp & 1){
+           DisplayEvent('d', &BufferLastEvent[device]);
           responseTime[device] += Now() - BufferLastEvent[device].When;
-          processed[device]++;
-          DisplayEvent('d', &BufferLastEvent[device]);
       		Server(&BufferLastEvent[device]);
-          //printf("device: %d --- lastEID: %d\n",i, lastEID[i] );
-
+          turnaround[device] += Now() - BufferLastEvent[device].When;
+          processed[device]++;
         }
         temp = temp >> 1;
         device++;
+        //printf("temp = %d - \n ",temp);
       }
     }
   }
@@ -117,18 +119,16 @@ void Control(void){
 *           not yet processed (Server() function not yet called)        *
 \***********************************************************************/
 void BookKeeping(void){
-  Timestamp done = Now();
-  int missed = 0;
-  int total = 0;
-   for (int i = 0; i < MAX_NUMBER_DEVICES ; i++){
-      int numEvent = BufferLastEvent[i].EventID;
-      if (numEvent > 0){
-  	    DisplayEvent('b', &BufferLastEvent[i]);
-        missed += numEvent - processed[i] + 1 ;
-        printf("device: [%d] --- avg response time: %d\n",i,  responseTime[i]/numEvent );
-        printf("device: [%d] --- processed: %d\n",i, processed[i] );
-      }
+  int i;
+  printf("\nStart BookKeeping ...\n");
+  printf("\nDevice\tmissed\tavg response time\tavg turnaround time\tlast event\n");
+  for (i = 0; i < MAX_NUMBER_DEVICES ; i++){
+    int numEvent = BufferLastEvent[i].EventID + 1;
+    if (numEvent > 0){
+      float missed = numEvent - processed[i];
+      printf("%d\t%5.2f",i,missed/numEvent*100.0);
+      printf("\t\t%lf\t\t%lf\t%d\n",responseTime[i]/numEvent,turnaround[i]/numEvent,numEvent );
+      //printf("device [%d]:missed %d percent events with avg response time: %lf\n",i, missed/numEvent*100 ,responseTime[i]/numEvent );
+    }
   }
-  printf("total turn around time %10.3f\n", done);
-  printf("\n >>>>>> Done\n");
 }
