@@ -119,8 +119,6 @@ void Control(void){
 *           not yet processed (Server() function not yet called)        *
 \***********************************************************************/
 void BookKeeping(void){
-
-  int totalEvents = 0;
   int i;
   printf("\nStart BookKeeping ...\n");
   printf("\nDevice\tmissed\tavg response time\tavg turnaround time\tlast event\n");
