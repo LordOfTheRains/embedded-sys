@@ -69,18 +69,13 @@ int main (int argc, char **argv) {
    }
 } /* end of main function */
 
-
-int processed[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
-
-double turnaround[MAX_NUMBER_DEVICES] = {0};
-double responseTime[MAX_NUMBER_DEVICES] = {0};
 /***********************************************************************\
  * Input : none                                                          *
  * Output: None                                                          *
  * Function: Monitor Devices and process events (written by students)    *
  \***********************************************************************/
 void Control(void){
-  int i;
+
   while (1){
     if (Flags){
       unsigned temp = Flags; //temp is negative sometimes even if flag is not
@@ -90,8 +85,6 @@ void Control(void){
       int device = 0;
       while (temp){
         if (temp & 1){
-           DisplayEvent('d', &BufferLastEvent[device]);
-          responseTime[device] += Now() - BufferLastEvent[device].When;
       		Server(&BufferLastEvent[device]);
           turnaround[device] += Now() - BufferLastEvent[device].When;
           processed[device]++;
@@ -106,7 +99,18 @@ void Control(void){
 
 }
 
+int MAX_E_POWER = 4;
+int MAX_EVENT_PER_DEV = 1 << MAX_E_POWER; //MAXIMUM NUMBER OF EVENTS PER DEVICE TO BUFFER
+typedef struct EventQueue{
+  Event unservedEvents[MAX_EVENT_PER_DEV];
+  int nextToServe = 0;
+  int nextToStore = 0;
+} EventQueue;
 
+int processed[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
+double turnaround[MAX_NUMBER_DEVICES] = {0};
+double responseTime[MAX_NUMBER_DEVICES] = {0};
+EventQueue unserved[MAX_NUMBER_DEVICES];
 /***********************************************************************\
 * Input : None                                                          *
 * Output: None                                                          *
@@ -116,6 +120,23 @@ void Control(void){
 void InterruptRoutineHandlerDevice(void){
   printf("An event occured at %f  Flags = %d \n", Now(), Flags);
 	// Put Here the most urgent steps that cannot wait
+  unsigned temp = Flags; //temp is negative sometimes even if flag is not
+  //printf("Flags = %d - \n ",Flags);
+  //printf("temp = %d...... \n ",temp);
+  Flags = 0;
+  int device = 0;
+  while (temp){
+    if (temp & 1){
+      unserved[device].unservedEvents[unserved[device].nextToStore] = BufferLastEvent[device]; //store the event
+      unserved[device].nextToStore = (unserved[device].nextToStore + 1) & (MAX_EVENT_PER_DEV - 1);
+      //Flags |= ~1; //clear the device flag
+      DisplayEvent('d', &BufferLastEvent[device]);
+      responseTime[device] += Now() - BufferLastEvent[device].When;
+    }
+    temp = temp >> 1;
+    device++;
+    //printf("temp = %d - \n ",temp);
+  }
 }
 
 
