@@ -31,6 +31,17 @@
 \*****************************************************************************/
 
 
+#define MAX_EVENT_PER_DEV 16 //MAXIMUM NUMBER OF EVENTS PER DEVICE TO BUFFER
+
+
+
+Event unservedEvents[MAX_NUMBER_DEVICES][MAX_EVENT_PER_DEV] = {0};
+int nextToServe[MAX_NUMBER_DEVICES] = {0};
+int nextToStore[MAX_NUMBER_DEVICES] = {0};
+
+int processed[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
+double turnaround[MAX_NUMBER_DEVICES] = {0};
+double responseTime[MAX_NUMBER_DEVICES] = {0};
 
 
 /*****************************************************************************\
@@ -75,42 +86,22 @@ int main (int argc, char **argv) {
  * Function: Monitor Devices and process events (written by students)    *
  \***********************************************************************/
 void Control(void){
-
+  int device = 0;
   while (1){
-    if (Flags){
-      unsigned temp = Flags; //temp is negative sometimes even if flag is not
-      //printf("Flags = %d - \n ",Flags);
-      //printf("temp = %d...... \n ",temp);
-      Flags = 0;
-      int device = 0;
-      while (temp){
-        if (temp & 1){
-      		Server(&BufferLastEvent[device]);
-          turnaround[device] += Now() - BufferLastEvent[device].When;
-          processed[device]++;
-        }
-        temp = temp >> 1;
-        device++;
-        //printf("temp = %d - \n ",temp);
-      }
+    int serveIndex = nextToServe[device];
+    Event e = unservedEvents[device][serveIndex];
+    if (&e){
+      Server(&e);
+      turnaround[device] += Now() - BufferLastEvent[device].When;
+      processed[device]++;
+      //unservedEvents[device][serveIndex] = NULL;
+      nextToServe[device] = (nextToServe[device] + 1) & (MAX_EVENT_PER_DEV - 1);;
     }
+    //should go from 31-0
+    device = (device + 1) & (MAX_NUMBER_DEVICES - 1);
   }
-  }
-
 }
 
-int MAX_E_POWER = 4;
-int MAX_EVENT_PER_DEV = 1 << MAX_E_POWER; //MAXIMUM NUMBER OF EVENTS PER DEVICE TO BUFFER
-typedef struct EventQueue{
-  Event unservedEvents[MAX_EVENT_PER_DEV];
-  int nextToServe = 0;
-  int nextToStore = 0;
-} EventQueue;
-
-int processed[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
-double turnaround[MAX_NUMBER_DEVICES] = {0};
-double responseTime[MAX_NUMBER_DEVICES] = {0};
-EventQueue unserved[MAX_NUMBER_DEVICES];
 /***********************************************************************\
 * Input : None                                                          *
 * Output: None                                                          *
@@ -127,8 +118,8 @@ void InterruptRoutineHandlerDevice(void){
   int device = 0;
   while (temp){
     if (temp & 1){
-      unserved[device].unservedEvents[unserved[device].nextToStore] = BufferLastEvent[device]; //store the event
-      unserved[device].nextToStore = (unserved[device].nextToStore + 1) & (MAX_EVENT_PER_DEV - 1);
+      unservedEvents[device][nextToStore[device]] = BufferLastEvent[device]; //store the event
+      nextToStore[device] = (nextToStore[device] + 1) & (MAX_EVENT_PER_DEV - 1);
       //Flags |= ~1; //clear the device flag
       DisplayEvent('d', &BufferLastEvent[device]);
       responseTime[device] += Now() - BufferLastEvent[device].When;
