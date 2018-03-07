@@ -31,7 +31,7 @@
 \*****************************************************************************/
 
 
-#define MAX_EVENT_PER_DEV 16 //MAXIMUM NUMBER OF EVENTS PER DEVICE TO BUFFER
+#define MAX_EVENT_PER_DEV 32 //MAXIMUM NUMBER OF EVENTS PER DEVICE TO BUFFER
 
 
 
@@ -90,12 +90,14 @@ void Control(void){
   while (1){
     int serveIndex = nextToServe[device];
     Event e = unservedEvents[device][serveIndex];
-    if (&e){
+    if (e.EventID > -1){
       Server(&e);
-      turnaround[device] += Now() - BufferLastEvent[device].When;
+      turnaround[device] += Now() - e.When;
       processed[device]++;
-      //unservedEvents[device][serveIndex] = NULL;
-      nextToServe[device] = (nextToServe[device] + 1) & (MAX_EVENT_PER_DEV - 1);;
+
+      printf("Device %d  served, serve index at: %d\n", e.EventID, serveIndex);
+      unservedEvents[device][serveIndex].EventID = -1;
+      nextToServe[device] = (nextToServe[device] + 1) & (MAX_EVENT_PER_DEV - 1);
     }
     //should go from 31-0
     device = (device + 1) & (MAX_NUMBER_DEVICES - 1);
@@ -109,7 +111,7 @@ void Control(void){
 *           The id of the device is encoded in the variable flag        *
 \***********************************************************************/
 void InterruptRoutineHandlerDevice(void){
-  printf("An event occured at %f  Flags = %d \n", Now(), Flags);
+  //printf("An event occured at %f  Flags = %d \n", Now(), Flags);
 	// Put Here the most urgent steps that cannot wait
   unsigned temp = Flags; //temp is negative sometimes even if flag is not
   //printf("Flags = %d - \n ",Flags);
@@ -121,8 +123,10 @@ void InterruptRoutineHandlerDevice(void){
       unservedEvents[device][nextToStore[device]] = BufferLastEvent[device]; //store the event
       nextToStore[device] = (nextToStore[device] + 1) & (MAX_EVENT_PER_DEV - 1);
       //Flags |= ~1; //clear the device flag
-      DisplayEvent('d', &BufferLastEvent[device]);
+      DisplayEvent('-', &BufferLastEvent[device]);
       responseTime[device] += Now() - BufferLastEvent[device].When;
+      //printf("device = %d - \n ",device);
+      printf("Device %d  got event, next to store index at: %d\n", device, nextToStore[device]);
     }
     temp = temp >> 1;
     device++;
@@ -146,9 +150,9 @@ void BookKeeping(void){
   printf("\nStart BookKeeping ...\n");
   printf("\nDevice\tmissed\tavg response time\tavg turnaround time\tlast event\n");
   for (i = 0; i < MAX_NUMBER_DEVICES ; i++){
-    int numEvent = BufferLastEvent[i].EventID + 1;
-    if (numEvent > 0){
-      float missed = numEvent - processed[i];
+    if (BufferLastEvent[i].EventID > 0){
+      int numEvent = BufferLastEvent[i].EventID + 1;
+      int missed = numEvent - processed[i];
       printf("%d\t%5.2f",i,missed/numEvent*100.0);
       printf("\t\t%lf\t\t%lf\t%d\n",responseTime[i]/numEvent,turnaround[i]/numEvent,numEvent );
       //printf("device [%d]:missed %d percent events with avg response time: %lf\n",i, missed/numEvent*100 ,responseTime[i]/numEvent );
