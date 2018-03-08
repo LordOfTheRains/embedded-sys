@@ -32,8 +32,8 @@
 
 
 #define MAX_EVENT_PER_DEV 32 //MAXIMUM NUMBER OF EVENTS PER DEVICE TO BUFFER
-
-
+#define MAX_EVENT_PER_DEV_MINUS1 31
+#define MAX_NUMBER_DEVICES_MINUS1 31
 
 Event unservedEvents[MAX_NUMBER_DEVICES][MAX_EVENT_PER_DEV] = {0};
 int nextToServe[MAX_NUMBER_DEVICES] = {0};
@@ -94,13 +94,12 @@ void Control(void){
       Server(&e);
       turnaround[device] += Now() - e.When;
       processed[device]++;
-
       //printf("Device %d  served, serve index at: %d\n",e.DeviceID, serveIndex);
       unservedEvents[device][serveIndex].EventID = -1;
-      nextToServe[device] = (nextToServe[device] + 1) & (MAX_EVENT_PER_DEV - 1);
+      nextToServe[device] = (nextToServe[device] + 1) & MAX_EVENT_PER_DEV_MINUS1;
     }
     //should go from 31-0
-    device = (device + 1) & (MAX_NUMBER_DEVICES - 1);
+    device = (device + 1) & MAX_NUMBER_DEVICES_MINUS1;
   }
 }
 
@@ -121,7 +120,7 @@ void InterruptRoutineHandlerDevice(void){
   while (temp){
     if (temp & 1){
       unservedEvents[device][nextToStore[device]] = BufferLastEvent[device]; //store the event
-      nextToStore[device] = (nextToStore[device] + 1) & (MAX_EVENT_PER_DEV - 1);
+      nextToStore[device] = (nextToStore[device] + 1) & MAX_EVENT_PER_DEV_MINUS1;
       //Flags |= ~1; //clear the device flag
       DisplayEvent('-', &BufferLastEvent[device]);
       responseTime[device] += Now() - BufferLastEvent[device].When;
