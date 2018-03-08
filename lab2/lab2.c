@@ -1,8 +1,8 @@
 
 /*****************************************************************************\
 * Laboratory Exercises COMP 3510                                              *
-* Author: Saad Biaz                                                           *
-* Date  : March 5, 2013                                                   *
+* Author: Rain Li, David Harris                                                           *
+* Date  : March 7, 2018                                                   *
 \*****************************************************************************/
 
 /*****************************************************************************\
@@ -95,7 +95,7 @@ void Control(void){
       turnaround[device] += Now() - e.When;
       processed[device]++;
 
-      printf("Device %d  served, serve index at: %d\n", e.EventID, serveIndex);
+      printf("Device %d  served, serve index at: %d\n",e.DeviceID, serveIndex);
       unservedEvents[device][serveIndex].EventID = -1;
       nextToServe[device] = (nextToServe[device] + 1) & (MAX_EVENT_PER_DEV - 1);
     }
