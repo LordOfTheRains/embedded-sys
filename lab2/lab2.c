@@ -38,6 +38,7 @@
 Event unservedEvents[MAX_NUMBER_DEVICES][MAX_EVENT_PER_DEV] = {0};
 int nextToServe[MAX_NUMBER_DEVICES] = {0};
 int nextToStore[MAX_NUMBER_DEVICES] = {0};
+int eventsBuffered[MAX_NUMBER_DEVICES] = {0};
 
 int processed[MAX_NUMBER_DEVICES] = {0}; // store the last event id that device seen
 double turnaround[MAX_NUMBER_DEVICES] = {0};
@@ -90,12 +91,12 @@ void Control(void){
   while (1){
     int serveIndex = nextToServe[device];
     Event e = unservedEvents[device][serveIndex];
-    if (e.EventID > -1){
+    if (eventsBuffered[device]){
       Server(&e);
       turnaround[device] += Now() - e.When;
       processed[device]++;
       //printf("Device %d  served, serve index at: %d\n",e.DeviceID, serveIndex);
-      unservedEvents[device][serveIndex].EventID = -1;
+      eventsBuffered[device]--;
       nextToServe[device] = (nextToServe[device] + 1) & MAX_EVENT_PER_DEV_MINUS1;
     }
     //should go from 31-0
@@ -119,11 +120,13 @@ void InterruptRoutineHandlerDevice(void){
   int device = 0;
   while (temp){
     if (temp & 1){
+      responseTime[device] += Now() - BufferLastEvent[device].When;
       unservedEvents[device][nextToStore[device]] = BufferLastEvent[device]; //store the event
-      nextToStore[device] = (nextToStore[device] + 1) & MAX_EVENT_PER_DEV_MINUS1;
       //Flags |= ~1; //clear the device flag
       DisplayEvent('-', &BufferLastEvent[device]);
-      responseTime[device] += Now() - BufferLastEvent[device].When;
+
+      eventsBuffered[device]++;
+      nextToStore[device] = (nextToStore[device] + 1) & MAX_EVENT_PER_DEV_MINUS1;
       //printf("device = %d - \n ",device);
       //printf("Device %d  got event, next to store index at: %d\n", device, nextToStore[device]);
     }
@@ -146,15 +149,27 @@ void BookKeeping(void){
   // 3) the average turnaround time.
   // Print the overall averages of the three metrics 1-3 above
   int i;
+  int totalMissed = 0;
+  double totalAvgRes = 0;
+  double totalAvgTurn = 0;
+  int totalEvent = 0;
+
   printf("\nStart BookKeeping ...\n");
   printf("\nDevice\tmissed\tavg response time\tavg turnaround time\tlast event\n");
   for (i = 0; i < MAX_NUMBER_DEVICES ; i++){
     if (BufferLastEvent[i].EventID > 0){
       int numEvent = BufferLastEvent[i].EventID + 1;
-      int missed = numEvent - processed[i];
-      printf("%d\t%5.2f",i,missed/numEvent*100.0);
+      float missed = numEvent - processed[i];
+      totalEvent += numEvent;
+      totalMissed += missed;
+      totalAvgRes += responseTime[i];
+      totalAvgTurn += turnaround[i];
+      printf("%d\t%5.2f",i,(double)missed/numEvent*100.0);
       printf("\t\t%lf\t\t%lf\t%d\n",responseTime[i]/numEvent,turnaround[i]/numEvent,numEvent );
       //printf("device [%d]:missed %d percent events with avg response time: %lf\n",i, missed/numEvent*100 ,responseTime[i]/numEvent );
     }
   }
+  printf("----------Overall------------\n");
+  printf("overall\t%5.2f",(double)totalMissed/totalEvent*100.0);
+  printf("\t\t%lf\t\t%lf\t%d\n",totalAvgRes/totalEvent,totalAvgTurn/totalEvent,totalEvent );
 }
