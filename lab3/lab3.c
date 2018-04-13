@@ -100,7 +100,7 @@ void Control(void){
       Server(&e);
       turnaround[device] += Now() - e.When;
       served[device]++;
-      printf("Device %d  served, serve index at: %d\n",e.DeviceID, serveIndex);
+      //printf("Device %d  served, serve index at: %d\n",e.DeviceID, serveIndex);
       eventsBuffered[device]--;
       nextToServe[device] = (nextToServe[device] + 1) & MAX_EVENT_PER_DEV_MINUS1;
       device = -1;
@@ -133,12 +133,12 @@ void InterruptRoutineHandlerDevice(void){
       responseTime[device] += Now() - BufferLastEvent[device].When;
       unservedEvents[device][nextToStore[device]] = BufferLastEvent[device]; //store the event
       //Flags |= ~1; //clear the device flag
-      //DisplayEvent('-', &BufferLastEvent[device]);
+      DisplayEvent('-', &BufferLastEvent[device]);
       processed[device]++;
       eventsBuffered[device]++;
       nextToStore[device] = (nextToStore[device] + 1) & MAX_EVENT_PER_DEV_MINUS1;
       //printf("device = %d - \n ",device);
-      printf("Device %d  got event, next to store index at: %d\n", device, nextToStore[device]);
+      //printf("Device %d  got event, next to store index at: %d\n", device, nextToStore[device]);
     }
     temp = temp >> 1;
     device++;
